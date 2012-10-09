@@ -1,0 +1,75 @@
+<?php
+/**
+ * @file
+ * Set up the database for a custom CCK field that accepts Canadian Social
+ * Insurance Numbers and validates them against a table in the database.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function field_ca_sin_install() {
+  // Run hook_schema().
+  drupal_install_schema('field_ca_sin');
+
+  // Fill the table we're validating against with some example data.
+  db_query('INSERT INTO {field_ca_sin_valid_sins} (sin) VALUES (%s);', '111222333');
+  db_query('INSERT INTO {field_ca_sin_valid_sins} (sin) VALUES (%s);', '444555666');
+  db_query('INSERT INTO {field_ca_sin_valid_sins} (sin) VALUES (%s);', '777888999');
+
+  // Load CCK and let it know this module just got installed.
+  drupal_load('module', 'content');
+  content_notify('install', 'field_ca_sin');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function field_ca_sin_uninstall() {
+  // Delete the table defined by hook_schema().
+  drupal_uninstall_schema('field_ca_sin');
+
+  // Load CCK and let it know this module just got uninstalled.
+  drupal_load('module', 'content');
+  content_notify('uninstall', 'field_ca_sin');
+}
+
+/**
+ * Implements hook_schema().
+ */
+function field_ca_sin_schema() {
+  $tables = array();
+
+  // Define the table we'll validate against.
+  $tables['field_ca_sin_valid_sins'] = array(
+    'description' => 'A table of SINs to validate against.',
+    'fields' => array(
+      'sin' => array(
+        'description' => 'A valid SIN',
+        'type' => 'varchar',
+        'length' => 9,
+        'not null' => TRUE,
+      ),
+    ),
+  );
+
+  return $tables;
+}
+
+/**
+ * Implements hook_enable().
+ */
+function field_ca_sin_enable() {
+  // Load CCK and let it know this module just got enabled.
+  drupal_load('module', 'content');
+  content_notify('enable', 'field_ca_sin');
+}
+
+/**
+ * Implements hook_disable().
+ */
+function field_ca_sin_disable() {
+  // Load CCK and let it know this module just got disabled.
+  drupal_load('module', 'content');
+  content_notify('disable', 'field_ca_sin');
+}

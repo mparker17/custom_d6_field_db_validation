@@ -1,0 +1,4 @@
+name = Canadian SIN field
+description = Defines a custom CCK field that accepts Canadian Social Insurance Numbers and validates them against a table in the database.
+core = 6.x
+dependencies[] = content

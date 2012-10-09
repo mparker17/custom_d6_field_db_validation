@@ -1,0 +1,288 @@
+<?php
+/**
+ * @file
+ * Defines a custom CCK field that accepts Canadian Social Insurance Numbers and
+ * validates them against a table in the database.
+ *
+ * This is an example module to demonstrate custom CCK fields validated against
+ * a database table to answer @babuuun's forum question at
+ * drupal.org/node/1637638
+ *
+ * A Canadian Social Insurance Number is a 9-digit number which, through
+ * functionality creep, has become somewhat of a national id number. This module
+ * will define a CCK field that accepts 9-digit numbers and validates them
+ * against a table in the database. Real SINs can be validated using a process
+ * known as the Luhn Algorithm, but that's beyond the scope of the example.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function field_ca_sin_theme() {
+  return array(
+    // Theme the form element on a node edit form.
+    'field_ca_sin_textfield' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    // Theme the output on a node view.
+    'field_ca_sin_plain' => array(
+      'arguments' => array('element' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_info().
+ */
+function field_ca_sin_field_info() {
+  return array(
+    'ca_sin' => array(
+      'label' => t('Canadian SIN'),
+      'description' => t('A Canadian Social Insurance Number.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_settings().
+ */
+function field_ca_sin_field_settings($op, $field) {
+  switch ($op) {
+    // Declare database columns that CCK should create and manage on behalf of
+    // this module. These database columns will be used to store the data
+    // for a single instance of the field (i.e.: the data entered on a node
+    // form).
+    case 'database columns':
+      $columns = array();
+
+      // The column to store the value entered by the user on the node form.
+      $columns['value'] = array(
+        'type' => 'varchar',
+        'length' => 9,
+      );
+
+      return $columns;
+  }
+}
+
+/**
+ * Implements hook_field().
+ *
+ * @see number_field()
+ */
+function field_ca_sin_field($op, &$node, $field, &$items, $teaser, $page) {
+  switch ($op) {
+    // Validate the data
+    case 'validate':
+      if (is_array($items)) {
+        foreach ($items as $delta => $item) {
+          // Determine which form element contains the values we're currently
+          // looking at. Copied from number.module.
+          $error_element = isset($item['_error_element']) ? $item['_error_element'] : '';
+          if (is_array($item) && isset($item['_error_element'])) unset($item['_error_element']);
+
+          // Validate the field.
+          _field_ca_sin_validate($item['value'], $field['widget']['label'], $error_element);
+        }
+      }
+      return $items;
+  }
+}
+
+/**
+ * Implements hook_content_is_empty().
+ *
+ * @see text_content_is_empty()
+ */
+function field_ca_sin_content_is_empty($item, $field) {
+  if (empty($item['value']) && (string)$item['value'] !== '0') {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function field_ca_sin_field_formatter_info() {
+  $formatters = array();
+
+  $formatters['plain'] = array(
+    'label' => t('Plain'),
+    'field types' => array('ca_sin'),
+    'multiple values' => CONTENT_HANDLE_CORE,
+  );
+
+  return $formatters;
+}
+
+/**
+ * Implemements hook_widget_info().
+ */
+function field_ca_sin_widget_info() {
+  $widgets = array();
+
+  // Define a widget to collect Social Insurance Numbers.
+  $widgets['ca_sin_textfield'] = array(
+    'label' => t('Canadian SIN'),
+    'field types' => array('ca_sin'),
+    'multiple values' => CONTENT_HANDLE_CORE,
+    'callbacks' => array(
+      'default value' => CONTENT_CALLBACK_DEFAULT,
+    ),
+  );
+
+  return $widgets;
+}
+
+/**
+ * Implements hook_widget_settings().
+ */
+function field_ca_sin_widget_settings($op, $widget) {
+  switch ($op) {
+    case 'form':
+      $form = array();
+      // Noop.
+      return $form;
+  }
+}
+
+/**
+ * Implements hook_elements().
+ */
+function field_ca_sin_elements() {
+  $fapi_elements = array();
+
+  $fapi_elements['field_ca_sin_textfield'] = array(
+    '#input' => TRUE,
+    '#columns' => array('value'), '#delta' => 0,
+    '#process' => array('field_ca_sin_textfield_process'),
+  );
+
+  return $fapi_elements;
+}
+
+/**
+ * Implements hook_widget().
+ */
+function field_ca_sin_widget(&$form, &$form_state, $field, $items, $delta = 0) {
+  // Define a widget to collect SINs on a node form.
+  $element = array(
+    '#type' => $field['widget']['type'],
+    '#default_value' => isset($items[$delta]) ? $items[$delta] : NULL,
+  );
+
+  return $element;
+}
+
+/**
+ * Process an individual element.
+ *
+ * @see number_process
+ */
+function field_ca_sin_textfield_process($element, $edit, $form_state, $form) {
+  // Shortcuts for values we'll use often.
+  $field_name = $element['#field_name'];
+  $field = $form['#field_info'][$field_name];
+  $field_key  = $element['#columns'][0];
+
+  // If a default value (or value previously entered) is not set, use an empty
+  // string as the default value.
+  $value = isset($element['#value'][$field_key]) ? $element['#value'][$field_key] : '';
+
+  // Define the form element used to collect a SIN.
+  $element[$field_key] = array(
+    '#type' => 'textfield',
+    '#default_value' => $value,
+    '#size' => 9,
+    '#maxlength' => 9,
+
+    // Copy field-instance settings to this particular form (these settings are
+    // set when the field was added to the content type).
+    '#title' => $element['#title'],
+    '#description' => $element['#description'],
+    '#required' => $element['#required'],
+    '#field_name' => $element['#field_name'],
+    '#type_name' => $element['#type_name'],
+    '#delta' => $element['#delta'],
+    '#columns' => $element['#columns'],
+  );
+
+  // Set up a validation callback.
+  $element['#element_validate'] = array('field_ca_sin_validate');
+
+  // Help our validation function know where to flag an error.
+  $element['_error_element'] = array(
+    '#type' => 'value',
+    '#value' => implode('][', array_merge($element['#parents'], array($field_key))),
+  );
+
+  return $element;
+}
+
+/**
+ * Validate an individual ca_sin element.
+ */
+function field_ca_sin_validate($element, &$form_state) {
+  // Shortcuts for values we'll use often.
+  $field = content_fields($element['#field_name'], $element['#type_name']);
+  $field_key = $element['#columns'][0];
+  $value = $element['#value'][$field_key];
+  $error_field = implode('][', $element['#parents']) .']['. $field_key;
+
+  // Validate the field.
+  _field_ca_sin_validate($value, $field['widget']['label'], $error_field);
+}
+
+/**
+ * Validate a string that might be a ca_sin.
+ *
+ * @param string $value
+ *   The value to check.
+ * @param string $field_name
+ *   A field widget name, to make error messages more meaningful, if
+ *   applicable.
+ * @param string $error_element
+ *   The element to set errors on, if applicable.
+ */
+function _field_ca_sin_validate($value, $field_name, $error_element) {
+  // Ensure $value is a string before proceeding.
+  if (!is_string($value)) {
+    $value = (string)$value;
+  }
+
+  // An empty value could be someone not entering something in an optional
+  // field, so ignore that case. CCK will enforce filling in "required" fields.
+  if (!empty($value)) {
+    // Basic sanity check... don't do computationally-expensive database
+    // operations if there's an obvious error.
+    if (drupal_strlen($value) != 9 || !is_numeric($value)) {
+      form_set_error($error_element, t('%name: Invalid SIN. Must be 9 numbers.', array('%name' => $field_name)));
+    }
+    else {
+      // Build an SQL query.
+      $query = 'SELECT * FROM {field_ca_sin_valid_sins} WHERE sin = "%s"';
+
+      // Run the query.
+      $results = db_query($query, $value);
+
+      if (!db_fetch_array($results)) {
+        form_set_error($error_element, t('%name: SIN is valid but not whitelisted.', array('%name' => $field_name)));
+      }
+    }
+  }
+}
+
+/**
+ * Returns HTML for a Canadian SIN field on a node edit form.
+ */
+function theme_field_ca_sin_textfield($element) {
+  return $element['#children'];
+}
+
+/**
+ * Returns HTML for a Canadian SIN field on a node view.
+ */
+function theme_field_ca_sin_plain($element) {
+  return strip_tags($element['#item']['safe']);
+}
