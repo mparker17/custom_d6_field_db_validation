@@ -109,8 +109,8 @@ function field_ca_sin_content_is_empty($item, $field) {
 function field_ca_sin_field_formatter_info() {
   $formatters = array();
 
-  $formatters['plain'] = array(
-    'label' => t('Plain'),
+  $formatters['ca_sin_plain'] = array(
+    'label' => t('Plain text SIN'),
     'field types' => array('ca_sin'),
     'multiple values' => CONTENT_HANDLE_CORE,
   );
