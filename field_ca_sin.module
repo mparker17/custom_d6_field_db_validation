@@ -25,7 +25,7 @@ function field_ca_sin_theme() {
       'arguments' => array('element' => NULL),
     ),
     // Theme the output on a node view.
-    'field_ca_sin_plain' => array(
+    'field_ca_sin_formatter_plain' => array(
       'arguments' => array('element' => NULL),
     ),
   );
@@ -40,7 +40,7 @@ function field_ca_sin_field_info() {
       'label' => t('Canadian SIN'),
       'description' => t('A Canadian Social Insurance Number.'),
       'default_widget' => 'field_ca_sin_textfield',
-      'default_formatter' => 'ca_sin_plain',
+      'default_formatter' => 'plain',
     ),
   );
 }
@@ -109,7 +109,7 @@ function field_ca_sin_content_is_empty($item, $field) {
 function field_ca_sin_field_formatter_info() {
   $formatters = array();
 
-  $formatters['ca_sin_plain'] = array(
+  $formatters['plain'] = array(
     'label' => t('Plain text SIN'),
     'field types' => array('ca_sin'),
     'multiple values' => CONTENT_HANDLE_CORE,
@@ -285,6 +285,6 @@ function theme_field_ca_sin_textfield($element) {
 /**
  * Returns HTML for a Canadian SIN field on a node view.
  */
-function theme_field_ca_sin_plain($element) {
-  return strip_tags($element['#item']['safe']);
+function theme_field_ca_sin_formatter_plain($element) {
+  return strip_tags($element['#item']['value']);
 }
