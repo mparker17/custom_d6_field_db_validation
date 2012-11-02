@@ -186,7 +186,7 @@ function field_ca_sin_textfield_process($element, $edit, $form_state, $form) {
   // Shortcuts for values we'll use often.
   $field_name = $element['#field_name'];
   $field = $form['#field_info'][$field_name];
-  $field_key  = $element['#columns'][0];
+  $field_key = $element['#columns'][0];
 
   // If a default value (or value previously entered) is not set, use an empty
   // string as the default value.
