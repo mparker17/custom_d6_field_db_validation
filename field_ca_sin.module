@@ -39,7 +39,7 @@ function field_ca_sin_field_info() {
     'ca_sin' => array(
       'label' => t('Canadian SIN'),
       'description' => t('A Canadian Social Insurance Number.'),
-      'default_widget' => 'ca_sin_textfield',
+      'default_widget' => 'field_ca_sin_textfield',
       'default_formatter' => 'ca_sin_plain',
     ),
   );
@@ -125,7 +125,7 @@ function field_ca_sin_widget_info() {
   $widgets = array();
 
   // Define a widget to collect Social Insurance Numbers.
-  $widgets['ca_sin_textfield'] = array(
+  $widgets['field_ca_sin_textfield'] = array(
     'label' => t('Canadian SIN'),
     'field types' => array('ca_sin'),
     'multiple values' => CONTENT_HANDLE_CORE,
